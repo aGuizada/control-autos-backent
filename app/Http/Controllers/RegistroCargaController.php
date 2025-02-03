@@ -4,28 +4,51 @@ namespace App\Http\Controllers;
 
 use App\Models\RegistroCarga;
 use Illuminate\Http\Request;
-
+use Carbon\Carbon;
 class RegistroCargaController extends Controller
 {
     public function index()
     {
-        return response()->json(RegistroCarga::with('usuario')->get());
+        $registrosCarga = RegistroCarga::with('usuario') // Eager load user relationship
+            ->orderBy('fecha_carga', 'desc')
+            ->get();
+    
+        return response()->json($registrosCarga);
     }
+
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'usuario_id' => 'required|exists:usuarios,id',
+            'fecha_carga' => 'required|date',
+            'qrHabilitado' => 'boolean'
         ]);
-
+    
+        // Convert ISO 8601 timestamp to MySQL datetime format
+        $fechaCarga = \Carbon\Carbon::parse($request->input('fecha_carga'))->format('Y-m-d H:i:s');
+    
         $registroCarga = RegistroCarga::create([
-            'usuario_id' => $request->usuario_id,
-            'fecha_carga' => now(),  // Agregamos la fecha actual automáticamente
+            'usuario_id' => $validatedData['usuario_id'],
+            'fecha_carga' => $fechaCarga,
+            'qrHabilitado' => false
         ]);
-
+    
         return response()->json($registroCarga, 201);
     }
-
+    
+    public function checkQRStatus($usuarioId)
+    {
+        // Check if there's a recent QR scan that's still disabled
+        $ultimoRegistro = RegistroCarga::where('usuario_id', $usuarioId)
+            ->where('qrHabilitado', false)
+            ->where('fecha_carga', '>', now()->subDays(7))
+            ->first();
+    
+        return response()->json([
+            'qrHabilitado' => $ultimoRegistro ? false : true
+        ]);
+    }
     public function marcarQR(Request $request)
     {
         // Validar los datos de la solicitud
