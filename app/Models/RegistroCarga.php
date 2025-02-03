@@ -8,11 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class RegistroCarga extends Model
 {
     use HasFactory;
-    protected $table = 'registros_carga';
-    protected $fillable = ['auto_id', 'fecha_carga'];
 
-    public function auto()
+    protected $table = 'registros_carga';
+
+    protected $fillable = ['usuario_id', 'fecha_carga', 'qrHabilitado']; // Asegúrate de agregar qrHabilitado aquí
+
+
+    public function usuario()
     {
-        return $this->belongsTo(Auto::class);
+        return $this->belongsTo(Usuario::class, 'usuario_id');
     }
 }

@@ -15,13 +15,22 @@ class AutoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'numero_chasis' => 'required|unique:autos',
+            'numero_chasis' => 'required|unique:autos,numero_chasis',
+            'marca' => 'nullable|string', // Marca es nullable, pero si se pasa debe ser una cadena
+            'modelo' => 'nullable|string', // Modelo también es nullable
             'imagen' => 'nullable|string',
-            'usuario_id' => 'required|exists:usuarios,id'
+            'usuario_id' => 'required|exists:usuarios,id', // Validación de la relación
         ]);
-
-        $auto = Auto::create($request->all());
-        return response()->json($auto, 201);
+    
+        $auto = new Auto();
+        $auto->numero_chasis = $request->input('numero_chasis');
+        $auto->marca = $request->input('marca');  // Marca
+        $auto->modelo = $request->input('modelo');  // Modelo
+        $auto->imagen = $request->input('imagen');  // Imagen (ruta opcional)
+        $auto->usuario_id = $request->input('usuario_id');
+        $auto->save();
+    
+        return response()->json($auto, 201); // Devolver el auto recién creado
     }
 
     public function show($id)
