@@ -9,10 +9,28 @@ class RegistroCargaController extends Controller
 {
     public function index()
     {
-        $registrosCarga = RegistroCarga::with('usuario') // Eager load user relationship
+        // Verificación explícita de autenticación
+        if (!auth()->check()) {
+            return response()->json([
+                'error' => 'Usuario no autenticado',
+                'message' => 'Debe iniciar sesión para ver los registros'
+            ], 401);
+        }
+    
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'error' => 'No se pudo encontrar el usuario',
+                'message' => 'Hay un problema con la autenticación'
+            ], 401);
+        }
+    
+        $registrosCarga = RegistroCarga::with('usuario')
+            ->where('usuario_id', $user->id)
             ->orderBy('fecha_carga', 'desc')
             ->get();
-    
+        
         return response()->json($registrosCarga);
     }
 

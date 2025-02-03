@@ -22,15 +22,19 @@ Route::apiResource('usuarios', UsuarioController::class);
 Route::apiResource('autos', AutoController::class);
 
 // Rutas para Registros de Carga
-Route::apiResource('registros-carga', RegistroCargaController::class);
+Route::middleware('auth:sanctum')->group(function () {
+    // Todas las rutas anteriores...
 
-// Rutas adicionales para Registros de Carga
-Route::post('registros-carga', [RegistroCargaController::class, 'store']);
-Route::get('registros-carga/check-qr-status/{usuarioId}', [RegistroCargaController::class, 'checkQRStatus']);
-Route::put('registros-carga/{usuarioId}/marcar-qr', [RegistroCargaController::class, 'marcarQR'])
-     ->name('registros-carga.marcarQR');
-Route::post('registros-carga/marcar-qr', [RegistroCargaController::class, 'marcarQR']);
+    // Rutas para Registros de Carga
+    Route::apiResource('registros-carga', RegistroCargaController::class);
 
+    // Rutas adicionales para Registros de Carga
+    Route::post('registros-carga', [RegistroCargaController::class, 'store']);
+    Route::get('registros-carga/check-qr-status/{usuarioId}', [RegistroCargaController::class, 'checkQRStatus']);
+    Route::put('registros-carga/{usuarioId}/marcar-qr', [RegistroCargaController::class, 'marcarQR'])
+         ->name('registros-carga.marcarQR');
+    Route::post('registros-carga/marcar-qr', [RegistroCargaController::class, 'marcarQR']);
+});
 // Ruta para login
 Route::post('login', [AuthController::class, 'login']);
 
