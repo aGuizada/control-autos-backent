@@ -1,13 +1,14 @@
 <?php
 
 namespace App\Models;
-use Laravel\Sanctum\HasApiTokens; 
+
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Usuario extends Model
 {
-    use HasApiTokens, HasFactory; 
+    use HasApiTokens, HasFactory;
     
     protected $table = 'usuarios';
 
@@ -17,11 +18,7 @@ class Usuario extends Model
         'password',
         'telefono',
         'rol_id',
-        'comunidad_id',
-        'numero_chasis', // Campo del auto
-        'marca',         // Campo del auto
-        'modelo',        // Campo del auto
-        'imagen'         // Campo del auto
+        'comunidad_id'
     ];
 
     protected $hidden = ['password'];
@@ -35,19 +32,68 @@ class Usuario extends Model
     {
         return $this->belongsTo(Comunidad::class);
     }
+    
+    public function vehiculos()
+    {
+        return $this->hasMany(Vehiculo::class);
+    }
+    
+    public function registrosCarga()
+    {
+        return $this->hasMany(RegistroCarga::class);
+    }
+    
+    public function ultimaCarga()
+    {
+        return $this->registrosCarga()->latest('fecha_carga')->first();
+    }
+    
+    public function esAdmin()
+    {
+        return $this->rol_id === 1; // ID para el rol "admin"
+    }
+    
     public function perfil()
     {
-        return [
+        $datos = [
             'id' => $this->id,
             'nombre' => $this->nombre,
             'email' => $this->email,
             'telefono' => $this->telefono,
-            'numero_chasis' => $this->numero_chasis,
-            'marca' => $this->marca,
-            'modelo' => $this->modelo,
-            'imagen' => $this->imagen,
-            'rol' => $this->rol->nombre,  // O cualquier atributo del rol que necesites
-            'comunidad' => $this->comunidad->nombre  // O cualquier atributo de la comunidad
+            'rol' => $this->rol->nombre,
+            'comunidad' => $this->comunidad->nombre
         ];
+        
+        // Obtener vehículos
+        $vehiculos = [];
+        foreach ($this->vehiculos as $vehiculo) {
+            $vehiculos[] = [
+                'id' => $vehiculo->id,
+                'tipo' => $vehiculo->tipoVehiculo->nombre,
+                'numero_chasis' => $vehiculo->numero_chasis,
+                'placa' => $vehiculo->placa,
+                'marca' => $vehiculo->marca,
+                'modelo' => $vehiculo->modelo,
+                'imagen' => $vehiculo->imagen
+            ];
+        }
+        
+        $datos['vehiculos'] = $vehiculos;
+        
+        // Agregar información de última carga
+        $ultimaCarga = $this->ultimaCarga();
+        if ($ultimaCarga) {
+            $datos['ultima_carga'] = [
+                'fecha' => $ultimaCarga->fecha_carga->format('Y-m-d H:i:s'),
+                'cantidad_litros' => $ultimaCarga->cantidad_litros,
+                'vehiculo' => $ultimaCarga->vehiculo->marca . ' ' . $ultimaCarga->vehiculo->modelo,
+                'qr_habilitado' => $ultimaCarga->qr_habilitado,
+                'proxima_habilitacion' => $ultimaCarga->fecha_proxima_habilitacion 
+                    ? $ultimaCarga->fecha_proxima_habilitacion->format('Y-m-d H:i:s') 
+                    : null
+            ];
+        }
+        
+        return $datos;
     }
 }
